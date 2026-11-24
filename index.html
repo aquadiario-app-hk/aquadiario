@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AquaDiario</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:system-ui,-apple-system,sans-serif;background:#0b2530;color:#e8f4f8;margin:0;padding:0}
+header{background:#0f3546;padding:16px;position:sticky;top:0;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,.4)}
+header h1{margin:0;font-size:20px}
+header .sub{font-size:12px;color:#8fc3d8;margin-top:2px}
+main{padding:14px;padding-bottom:90px}
+.card{background:#123c4f;border-radius:14px;padding:14px;margin-bottom:12px;border:1px solid #1d5068}
+.card h2{margin:0 0 4px;font-size:17px}
+.muted{color:#8fc3d8;font-size:13px}
+.dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:8px;vertical-align:middle}
+.verde{background:#3ddc84}.ambar{background:#ffb300}.rojo{background:#ff5252}
+.row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.btn{display:inline-block;background:#1b9aaa;color:#04222e;font-weight:700;border:none;border-radius:12px;padding:12px 18px;font-size:15px;cursor:pointer;text-decoration:none}
+.btn.sec{background:#1d5068;color:#e8f4f8}
+.btn.peligro{background:#ff5252;color:#2b0000}
+.btn.block{display:block;width:100%;text-align:center;margin-top:10px}
+.fab{position:fixed;bottom:20px;right:20px;left:20px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{background:#0d3040;border:1px solid #1d5068;border-radius:999px;padding:4px 10px;font-size:12px}
+.chip.alert{border-color:#ff5252;color:#ff8a80}
+.filtros{display:flex;gap:8px;margin-bottom:14px}
+.filtros button{flex:1;background:#123c4f;color:#8fc3d8;border:1px solid #1d5068;border-radius:999px;padding:8px;font-size:14px;cursor:pointer}
+.filtros button.activo{background:#1b9aaa;color:#04222e;font-weight:700;border-color:#1b9aaa}
+label{display:block;font-size:13px;color:#8fc3d8;margin:12px 0 4px}
+input,select,textarea{width:100%;background:#0d3040;border:1px solid #1d5068;border-radius:10px;padding:11px;color:#e8f4f8;font-size:15px}
+textarea{min-height:70px}
+.reg{border-left:3px solid #1b9aaa;padding-left:10px;margin:12px 0}
+.reg .fecha{font-weight:700;font-size:14px}
+.reg .ops{margin-top:6px}
+.reg .ops button{background:none;border:none;color:#8fc3d8;font-size:13px;cursor:pointer;text-decoration:underline;padding:0 8px 0 0}
+.vacio{text-align:center;color:#8fc3d8;margin-top:60px;font-size:15px;line-height:1.6}
+.back{background:none;border:none;color:#1b9aaa;font-size:15px;cursor:pointer;padding:0 0 10px}
+.aviso{background:#3a2a00;border:1px solid #ffb300;color:#ffd54f;border-radius:10px;padding:10px;font-size:13px;margin-bottom:12px}
+.aviso.rojo{background:#3a0d0d;border-color:#ff5252;color:#ff8a80}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+var PARAMS={
+  dulce:[
+    {k:'temp',label:'Temperatura (°C)'},{k:'ph',label:'pH'},{k:'gh',label:'GH (°dH)'},{k:'kh',label:'KH (°dH)'},
+    {k:'nh3',label:'Amoniaco (mg/L)'},{k:'no2',label:'Nitritos (mg/L)'},{k:'no3',label:'Nitratos (mg/L)'},{k:'po4',label:'Fosfatos (mg/L)'}
+  ],
+  marino:[
+    {k:'temp',label:'Temperatura (°C)'},{k:'sal',label:'Salinidad (ppt)'},{k:'ph',label:'pH'},{k:'kh',label:'Alcalinidad (KH)'},
+    {k:'nh3',label:'Amoniaco (mg/L)'},{k:'no2',label:'Nitritos (mg/L)'},{k:'no3',label:'Nitratos (mg/L)'},{k:'po4',label:'Fosfatos (mg/L)'},
+    {k:'ca',label:'Calcio (mg/L)'},{k:'mg',label:'Magnesio (mg/L)'}
+  ]
+};
+var state={aquariums:[]};
+var filtro='todos';
+
+function load(){try{var s=JSON.parse(localStorage.getItem('aquadiario'));if(s&&s.aquariums){state=s;}}catch(e){}}
+function save(){localStorage.setItem('aquadiario',JSON.stringify(state));}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function num(v){var n=parseFloat(v);return isNaN(n)?null:n;}
+function getAq(id){for(var i=0;i<state.aquariums.length;i++){if(state.aquariums[i].id===id)return state.aquariums[i];}return null;}
+function regsOrd(a){return a.registros.slice().sort(function(x,y){return y.fecha.localeCompare(x.fecha);});}
+
+function estadoAcuario(a){
+  var regs=regsOrd(a);
+  if(regs.length){
+    var p=regs[0].params||{};
+    var no3max=a.tipo==='marino'?20:40;
+    if((num(p.nh3)!=null&&num(p.nh3)>0.25)||(num(p.no2)!=null&&num(p.no2)>0.25)||(num(p.no3)!=null&&num(p.no3)>no3max))return 'rojo';
+  }
+  var uc=null;
+  for(var i=0;i<regs.length;i++){if(num(regs[i].cambioAgua)!=null&&num(regs[i].cambioAgua)>0){uc=regs[i];break;}}
+  if(uc){
+    var dias=(Date.now()-new Date(uc.fecha+'T12:00:00').getTime())/86400000;
+    if(dias>=(a.cambioCada||7))return 'ambar';
+  }
+  return 'verde';
+}
+
+function render(){
+  var app=document.getElementById('app');
+  app.innerHTML='<header><h1>🐠 AquaDiario</h1><div class="sub">'+state.aquariums.length+' acuario'+(state.aquariums.length===1?'':'s')+'</div></header><main id="main"></main>';
+  var m=document.getElementById('main');
+  var hash=location.hash;
+  if(hash.indexOf('#aq/')===0){vistaDetalle(m,hash.slice(4));}
+  else if(hash.indexOf('#nuevo')===0){formAcuario(m,null);}
+  else if(hash.indexOf('#editar/')===0){formAcuario(m,hash.slice(8));}
+  else if(hash.indexOf('#reg/')===0){formRegistro(m,hash.slice(5),null);}
+  else if(hash.indexOf('#regedit/')===0){var parts=hash.slice(9).split('/');formRegistro(m,parts[0],parts[1]);}
+  else{vistaLista(m);}
+}
+window.addEventListener('hashchange',render);
+
+function vistaLista(m){
+  var html='<div class="filtros">'
+    +'<button class="'+(filtro==='todos'?'activo':'')+'" onclick="setFiltro(\'todos\')">Todos</button>'
+    +'<button class="'+(filtro==='dulce'?'activo':'')+'" onclick="setFiltro(\'dulce\')">💧 Dulce</button>'
+    +'<button class="'+(filtro==='marino'?'activo':'')+'" onclick="setFiltro(\'marino\')">🌊 Marino</button></div>';
+  var lista=state.aquariums.filter(function(a){return filtro==='todos'||a.tipo===filtro;});
+  if(!lista.length){
+    html+='<div class="vacio">No hay acuarios '+(filtro==='todos'?'todavía':'en esta sección')+'.<br>Pulsa "Añadir acuario" para crear el primero.</div>';
+  }
+  for(var i=0;i<lista.length;i++){
+    var a=lista[i];var est=estadoAcuario(a);
+    var uc=diasDesdeUltimoCambio(a);
+    html+='<div class="card" onclick="go(\'#aq/'+a.id+'\')"><div class="row"><h2><span class="dot '+est+'"></span>'+esc(a.nombre)+'</h2><span class="muted">'+(a.tipo==='marino'?'🌊 Marino':'💧 Dulce')+'</span></div>'
+      +'<div class="muted">'+esc(a.litros||'?')+' L · '+a.registros.length+' registro'+(a.registros.length===1?'':'s')+(uc!=null?' · último cambio de agua hace '+uc+' días':'')+'</div></div>';
+  }
+  html+='<div class="fab"><button class="btn block" onclick="go(\'#nuevo\')">+ Añadir acuario</button></div>';
+  html+='<div style="margin-top:70px" class="row"><button class="btn sec" onclick="exportar()">⬇️ Copia de seguridad</button><button class="btn sec" onclick="document.getElementById(\'imp\').click()">⬆️ Restaurar</button><input type="file" id="imp" accept=".json" style="display:none" onchange="importar(event)"></div>';
+  m.innerHTML=html;
+}
+function setFiltro(f){filtro=f;render();}
+function go(h){location.hash=h;}
+function diasDesdeUltimoCambio(a){
+  var regs=regsOrd(a);
+  for(var i=0;i<regs.length;i++){if(num(regs[i].cambioAgua)!=null&&num(regs[i].cambioAgua)>0){
+    return Math.floor((Date.now()-new Date(regs[i].fecha+'T12:00:00').getTime())/86400000);}}
+  return null;
+}
+
+function vistaDetalle(m,id){
+  var a=getAq(id);
+  if(!a){m.innerHTML='<div class="vacio">Acuario no encontrado.</div>';return;}
+  var est=estadoAcuario(a);
+  var html='<button class="back" onclick="go(\'\')">← Volver</button>';
+  if(est==='rojo')html+='<div class="aviso rojo">⚠️ El último registro tiene parámetros fuera del rango seguro.</div>';
+  if(est==='ambar')html+='<div class="aviso">⏰ Le toca cambio de agua (cada '+(a.cambioCada||7)+' días).</div>';
+  html+='<div class="card"><div class="row"><h2>'+esc(a.nombre)+'</h2><span class="dot '+est+'"></span></div>'
+    +'<div class="muted">'+(a.tipo==='marino'?'🌊 Marino':'💧 Dulce')+' · '+esc(a.litros||'?')+' L'+(a.fecha?' · desde '+esc(a.fecha):'')+'</div>'
+    +(a.equipamiento?'<div style="margin-top:8px;font-size:14px">🔧 '+esc(a.equipamiento)+'</div>':'')
+    +(a.habitantes?'<div style="margin-top:6px;font-size:14px">🐟 '+esc(a.habitantes).replace(/\n/g,'<br>')+'</div>':'')
+    +'<div class="row" style="margin-top:12px"><button class="btn sec" onclick="go(\'#editar/'+a.id+'\')">Editar</button><button class="btn peligro" onclick="borrarAcuario(\''+a.id+'\')">Eliminar</button></div></div>';
+  html+='<h3 style="margin:18px 0 4px">Registros</h3>';
+  var regs=regsOrd(a);
+  if(!regs.length)html+='<div class="vacio">Sin registros todavía.<br>Añade el primero con los parámetros del agua.</div>';
+  for(var i=0;i<regs.length;i++){
+    var r=regs[i];
+    html+='<div class="reg"><div class="fecha">'+esc(r.fecha)+'</div><div class="chips">';
+    var defs=PARAMS[a.tipo]||PARAMS.dulce;
+    for(var j=0;j<defs.length;j++){
+      var v=(r.params||{})[defs[j].k];
+      if(v!=null&&v!==''){
+        var alerta=(defs[j].k==='nh3'&&num(v)>0.25)||(defs[j].k==='no2'&&num(v)>0.25)||(defs[j].k==='no3'&&num(v)>(a.tipo==='marino'?20:40));
+        html+='<span class="chip'+(alerta?' alert':'')+'">'+esc(defs[j].label)+': '+esc(v)+'</span>';
+      }
+    }
+    if(num(r.cambioAgua)!=null&&num(r.cambioAgua)>0)html+='<span class="chip">💧 Cambio de agua: '+esc(r.cambioAgua)+'%</span>';
+    html+='</div>'+(r.notas?'<div style="margin-top:6px;font-size:14px">📝 '+esc(r.notas).replace(/\n/g,'<br>')+'</div>':'')
+      +'<div class="ops"><button onclick="go(\'#regedit/'+a.id+'/'+r.id+'\')">Editar</button><button onclick="borrarRegistro(\''+a.id+'\',\''+r.id+'\')">Eliminar</button></div></div>';
+  }
+  html+='<button class="btn block" onclick="go(\'#reg/'+a.id+'\')">+ Añadir registro</button>';
+  m.innerHTML=html;
+}
+
+function formAcuario(m,id){
+  var a=id?getAq(id):{nombre:'',tipo:'dulce',litros:'',fecha:'',cambioCada:7,equipamiento:'',habitantes:''};
+  if(!a){m.innerHTML='<div class="vacio">Acuario no encontrado.</div>';return;}
+  var html='<button class="back" onclick="history.back()">← Volver</button><h2 style="margin-top:0">'+(id?'Editar acuario':'Nuevo acuario')+'</h2>'
+    +'<label>Nombre</label><input id="f_nombre" value="'+esc(a.nombre)+'" placeholder="Ej. Acuario del salón">'
+    +'<label>Tipo</label><select id="f_tipo"><option value="dulce"'+(a.tipo==='dulce'?' selected':'')+'>💧 Agua dulce</option><option value="marino"'+(a.tipo==='marino'?' selected':'')+'>🌊 Marino</option></select>'
+    +'<label>Litros</label><input id="f_litros" type="number" min="0" value="'+esc(a.litros)+'">'
+    +'<label>Fecha de montaje</label><input id="f_fecha" type="date" value="'+esc(a.fecha||'')+'">'
+    +'<label>Cambio de agua cada... (días)</label><input id="f_cambio" type="number" min="1" value="'+esc(a.cambioCada||7)+'">'
+    +'<label>Equipamiento (filtro, luz, calentador, CO2...)</label><input id="f_equip" value="'+esc(a.equipamiento||'')+'">'
+    +'<label>Habitantes (peces, plantas, invertebrados)</label><textarea id="f_hab" placeholder="Ej. 10 neones, 6 guppies, 2 anubias">'+esc(a.habitantes||'')+'</textarea>'
+    +'<button class="btn block" onclick="guardarAcuario('+(id?'\''+id+'\'':'null')+')">Guardar</button>';
+  m.innerHTML=html;
+}
+function guardarAcuario(id){
+  var nombre=document.getElementById('f_nombre').value.trim();
+  if(!nombre){alert('Ponle un nombre al acuario.');return;}
+  var a=id?getAq(id):null;
+  if(!a){a={id:uid(),registros:[]};state.aquariums.push(a);}
+  a.nombre=nombre;
+  a.tipo=document.getElementById('f_tipo').value;
+  a.litros=document.getElementById('f_litros').value;
+  a.fecha=document.getElementById('f_fecha').value;
+  a.cambioCada=parseInt(document.getElementById('f_cambio').value,10)||7;
+  a.equipamiento=document.getElementById('f_equip').value;
+  a.habitantes=document.getElementById('f_hab').value;
+  save();go('#aq/'+a.id);
+}
+function borrarAcuario(id){
+  if(!confirm('¿Eliminar este acuario y todos sus registros?'))return;
+  state.aquariums=state.aquariums.filter(function(x){return x.id!==id;});
+  save();go('');
+}
+
+function formRegistro(m,aqId,regId){
+  var a=getAq(aqId);
+  if(!a){m.innerHTML='<div class="vacio">Acuario no encontrado.</div>';return;}
+  var r=regId?null:null;
+  if(regId){for(var i=0;i<a.registros.length;i++){if(a.registros[i].id===regId)r=a.registros[i];}}
+  var hoy=new Date().toISOString().slice(0,10);
+  var defs=PARAMS[a.tipo]||PARAMS.dulce;
+  var html='<button class="back" onclick="history.back()">← Volver</button><h2 style="margin-top:0">'+(regId?'Editar registro':'Nuevo registro')+' · '+esc(a.nombre)+'</h2>'
+    +'<label>Fecha</label><input id="r_fecha" type="date" value="'+esc(r?r.fecha:hoy)+'">';
+  for(var j=0;j<defs.length;j++){
+    var v=r&&r.params&&r.params[defs[j].k]!=null?r.params[defs[j].k]:'';
+    html+='<label>'+esc(defs[j].label)+'</label><input id="r_'+defs[j].k+'" type="number" step="any" value="'+esc(v)+'">';
+  }
+  html+='<label>Cambio de agua (%)</label><input id="r_cambio" type="number" min="0" max="100" value="'+esc(r&&r.cambioAgua!=null?r.cambioAgua:'')+'">'
+    +'<label>Notas</label><textarea id="r_notas">'+esc(r&&r.notas?r.notas:'')+'</textarea>'
+    +'<button class="btn block" onclick="guardarRegistro(\''+aqId+'\','+(regId?'\''+regId+'\'':'null')+')">Guardar</button>';
+  m.innerHTML=html;
+}
+function guardarRegistro(aqId,regId){
+  var a=getAq(aqId);if(!a)return;
+  var fecha=document.getElementById('r_fecha').value;
+  if(!fecha){alert('Pon una fecha.');return;}
+  var defs=PARAMS[a.tipo]||PARAMS.dulce;
+  var params={};
+  for(var j=0;j<defs.length;j++){
+    var v=document.getElementById('r_'+defs[j].k).value;
+    if(v!==''&&v!=null)params[defs[j].k]=v;
+  }
+  var r=null;
+  if(regId){for(var i=0;i<a.registros.length;i++){if(a.registros[i].id===regId)r=a.registros[i];}}
+  if(!r){r={id:uid()};a.registros.push(r);}
+  r.fecha=fecha;r.params=params;
+  r.cambioAgua=document.getElementById('r_cambio').value;
+  r.notas=document.getElementById('r_notas').value;
+  save();go('#aq/'+aqId);
+}
+function borrarRegistro(aqId,regId){
+  if(!confirm('¿Eliminar este registro?'))return;
+  var a=getAq(aqId);if(!a)return;
+  a.registros=a.registros.filter(function(x){return x.id!==regId;});
+  save();render();
+}
+
+function exportar(){
+  var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  var url=URL.createObjectURL(blob);
+  var link=document.createElement('a');
+  link.href=url;link.download='AquaDiario-copia.json';
+  document.body.appendChild(link);link.click();document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+function importar(ev){
+  var f=ev.target.files[0];if(!f)return;
+  var rd=new FileReader();
+  rd.onload=function(){
+    try{
+      var s=JSON.parse(rd.result);
+      if(!s||!s.aquariums){alert('Ese archivo no es una copia de AquaDiario.');return;}
+      if(!confirm('Esto sustituirá todos los datos actuales. ¿Seguir?'))return;
+      state=s;save();render();alert('Copia restaurada.');
+    }catch(e){alert('No se pudo leer el archivo.');}
+  };
+  rd.readAsText(f);
+}
+
+load();
+render();
+</script>
+</body>
+</html>
