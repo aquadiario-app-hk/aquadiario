@@ -120,7 +120,7 @@ function go(h){location.hash=h;}
 function diasDesdeUltimoCambio(a){
   var regs=regsOrd(a);
   for(var i=0;i<regs.length;i++){if(num(regs[i].cambioAgua)!=null&&num(regs[i].cambioAgua)>0){
-    return Math.floor((Date.now()-new Date(regs[i].fecha+'T12:00:00').getTime())/86400000);}}
+    return Math.max(0,Math.floor((Date.now()-new Date(regs[i].fecha+'T12:00:00').getTime())/86400000));}}
   return null;
 }
 
