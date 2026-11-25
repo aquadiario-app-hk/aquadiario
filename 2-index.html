@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#07161f">
+<title>AquaDiario</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:#07161f;color:#e8f4f8;padding-bottom:76px}
+header{position:sticky;top:0;z-index:20;background:rgba(7,22,31,.92);backdrop-filter:blur(8px);padding:14px 16px 10px;border-bottom:1px solid #123041}
+header h1{margin:0;font-size:22px;letter-spacing:.5px}
+header h1 .aq{color:#2fd4f2}
+header .sub{font-size:12px;color:#7fb6c9;margin-top:2px}
+main{padding:14px 14px 20px}
+.card{background:#0d2532;border-radius:18px;padding:14px;margin-bottom:12px;border:1px solid #16394b;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.card.tappable{cursor:pointer}
+.card h2{margin:0;font-size:17px}
+.muted{color:#7fb6c9;font-size:13px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:7px;vertical-align:middle;flex:none}
+.verde{background:#3ddc84;box-shadow:0 0 8px #3ddc8488}.ambar{background:#ffb300;box-shadow:0 0 8px #ffb30088}.rojo{background:#ff5252;box-shadow:0 0 8px #ff525288}
+.row{display:flex;align-items:center;gap:8px}
+.row.between{justify-content:space-between}
+.grow{flex:1;min-width:0}
+.btn{display:inline-block;background:#19b8d8;color:#03222c;font-weight:700;border:none;border-radius:14px;padding:13px 18px;font-size:15px;cursor:pointer;text-decoration:none}
+.btn.sec{background:#16394b;color:#e8f4f8}
+.btn.peligro{background:#3a1620;color:#ff8a80;border:1px solid #5c2230}
+.btn.block{display:block;width:100%;text-align:center;margin-top:10px}
+.btn.mini{padding:8px 12px;font-size:13px;border-radius:10px}
+.btn.ghost{background:transparent;border:1px solid #16394b;color:#7fb6c9}
+.fab{position:fixed;bottom:86px;right:16px;z-index:15}
+.fab button{width:58px;height:58px;border-radius:50%;background:#19b8d8;color:#03222c;font-size:30px;font-weight:700;border:none;box-shadow:0 6px 18px rgba(25,184,216,.45);cursor:pointer}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{background:#0a1d27;border:1px solid #1d4a60;border-radius:999px;padding:4px 10px;font-size:12px;color:#bfe6f2}
+.chip.alert{border-color:#ff5252;color:#ff8a80}
+.filtros{display:flex;gap:8px;margin-bottom:12px}
+.filtros button{flex:1;background:#0d2532;color:#7fb6c9;border:1px solid #16394b;border-radius:999px;padding:8px;font-size:13px;cursor:pointer}
+.filtros button.activo{background:#19b8d8;color:#03222c;font-weight:700;border-color:#19b8d8}
+label{display:block;font-size:13px;color:#7fb6c9;margin:12px 0 4px}
+input,select,textarea{width:100%;background:#0a1d27;border:1px solid #1d4a60;border-radius:12px;color:#e8f4f8;padding:12px;font-size:15px}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#19b8d8}
+textarea{min-height:70px;resize:vertical}
+.back{background:none;border:none;color:#2fd4f2;font-size:15px;padding:6px 0;cursor:pointer;margin-bottom:8px}
+.vacio{text-align:center;color:#7fb6c9;padding:34px 16px;font-size:14px;line-height:1.6}
+.aviso{background:#2a230f;border:1px solid #5c4d17;color:#ffd54f;padding:11px 14px;border-radius:12px;margin-bottom:12px;font-size:14px}
+.aviso.rojo{background:#331318;border-color:#6b1d24;color:#ff8a80}
+.reg{background:#0a1d27;border:1px solid #16394b;border-radius:14px;padding:12px;margin-bottom:10px}
+.reg .fecha{font-weight:700;font-size:14px;color:#2fd4f2}
+.reg .ops{margin-top:8px;display:flex;gap:12px}
+.reg .ops button{background:none;border:none;color:#7fb6c9;font-size:13px;cursor:pointer;padding:4px 0}
+/* barra inferior estilo app */
+nav.bottom{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;background:rgba(9,26,35,.97);border-top:1px solid #123041;padding:6px 0 calc(6px + env(safe-area-inset-bottom))}
+nav.bottom button{flex:1;background:none;border:none;color:#7fb6c9;font-size:11px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 0;position:relative}
+nav.bottom button .ico{font-size:21px}
+nav.bottom button.activo{color:#2fd4f2}
+nav.bottom .badge{position:absolute;top:0;right:calc(50% - 22px);background:#ff5252;color:#fff;font-size:10px;font-weight:700;border-radius:999px;padding:1px 6px}
+/* pestañas del acuario, estilo segmentado */
+.tabs{display:flex;background:#0a1d27;border:1px solid #16394b;border-radius:14px;padding:4px;margin-bottom:12px;overflow-x:auto}
+.tabs button{flex:1;min-width:76px;background:none;border:none;color:#7fb6c9;font-size:13px;padding:9px 4px;border-radius:10px;cursor:pointer;white-space:nowrap}
+.tabs button.activo{background:#16394b;color:#2fd4f2;font-weight:700}
+/* cabecera del acuario con foto */
+.aqhead{border-radius:18px;overflow:hidden;position:relative;margin-bottom:12px;border:1px solid #16394b;background:#0d2532;min-height:120px;display:flex;align-items:flex-end}
+.aqhead .bg{position:absolute;inset:0;background-size:cover;background-position:center;opacity:.45}
+.aqhead .grad{position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,22,31,.1),rgba(7,22,31,.92))}
+.aqhead .info{position:relative;padding:14px;width:100%}
+/* sliders de canales de luz */
+.canal{margin:10px 0}
+.canal .lab{display:flex;justify-content:space-between;font-size:13px;color:#bfe6f2;margin-bottom:2px}
+.canal input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:999px;background:#16394b;padding:0;border:none}
+.canal input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:24px;height:24px;border-radius:50%;background:#2fd4f2;border:3px solid #07161f;box-shadow:0 0 10px #2fd4f2aa;cursor:pointer}
+.canal input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:#2fd4f2;border:3px solid #07161f;cursor:pointer}
+.canal input[type=range].r::-webkit-slider-thumb{background:#ff6e6e}
+.canal input[type=range].g::-webkit-slider-thumb{background:#69f0ae}
+.canal input[type=range].b::-webkit-slider-thumb{background:#6ea8ff}
+.canal input[type=range].r::-moz-range-thumb{background:#ff6e6e}
+.canal input[type=range].g::-moz-range-thumb{background:#69f0ae}
+.canal input[type=range].b::-moz-range-thumb{background:#6ea8ff}
+canvas.graf{width:100%;background:#0a1d27;border:1px solid #16394b;border-radius:14px;margin-top:10px}
+.fotos{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.fotos img{width:72px;height:72px;object-fit:cover;border-radius:10px;border:1px solid #1d4a60;cursor:pointer}
+#visor{position:fixed;inset:0;background:rgba(0,0,0,.94);z-index:60;display:none;align-items:center;justify-content:center;flex-direction:column}
+#visor img{max-width:96vw;max-height:82vh;border-radius:10px}
+#visor .cerrar{color:#fff;font-size:15px;margin-top:14px;background:#16394b;border:none;border-radius:999px;padding:10px 22px;cursor:pointer}
+.tarea{display:flex;align-items:center;gap:10px;background:#0a1d27;border:1px solid #16394b;border-radius:14px;padding:12px;margin-bottom:8px}
+.tarea .estado{width:12px;height:12px;border-radius:50%;flex:none}
+.ptos{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.ptos button{background:#0a1d27;border:1px solid #1d4a60;color:#bfe6f2;border-radius:10px;padding:7px 10px;font-size:12px;cursor:pointer}
+.ptos button.activo{border-color:#2fd4f2;color:#2fd4f2;font-weight:700}
+.preset{display:flex;flex-direction:column;align-items:center;gap:4px;background:#0a1d27;border:1px solid #16394b;border-radius:14px;padding:12px 6px;color:#bfe6f2;font-size:12px;cursor:pointer;flex:1}
+.preset .ico{font-size:24px}
+.presets{display:flex;gap:8px;margin-bottom:6px}
+.statgrid{display:flex;gap:8px;margin-bottom:12px}
+.stat{flex:1;background:#0d2532;border:1px solid #16394b;border-radius:14px;padding:10px;text-align:center}
+.stat .v{font-size:18px;font-weight:800;color:#2fd4f2}
+.stat .l{font-size:11px;color:#7fb6c9;margin-top:2px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="visor" onclick="cerrarVisor()"><img id="visorImg" alt=""><button class="cerrar">Cerrar</button></div>
+<input type="file" id="imp" accept=".json" style="display:none">
+<script>
+/* ===== Datos ===== */
+var PARAMS={
+  dulce:[
+    {k:'temp',label:'Temperatura',u:'°C',min:22,max:28},
+    {k:'ph',label:'pH',u:'',min:6.2,max:7.8},
+    {k:'gh',label:'GH',u:'°dH',min:3,max:15},
+    {k:'kh',label:'KH',u:'°dH',min:3,max:10},
+    {k:'nh3',label:'Amoniaco',u:'mg/L',min:0,max:0.25},
+    {k:'no2',label:'Nitritos',u:'mg/L',min:0,max:0.25},
+    {k:'no3',label:'Nitratos',u:'mg/L',min:0,max:40},
+    {k:'po4',label:'Fosfatos',u:'mg/L',min:0,max:2},
+    {k:'co2',label:'CO2',u:'mg/L',min:15,max:35},
+    {k:'tds',label:'TDS',u:'ppm',min:50,max:400}
+  ],
+  marino:[
+    {k:'temp',label:'Temperatura',u:'°C',min:24,max:27},
+    {k:'sal',label:'Salinidad',u:'ppt',min:33,max:35},
+    {k:'ph',label:'pH',u:'',min:7.8,max:8.5},
+    {k:'kh',label:'Alcalinidad (KH)',u:'',min:7,max:11},
+    {k:'nh3',label:'Amoniaco',u:'mg/L',min:0,max:0.1},
+    {k:'no2',label:'Nitritos',u:'mg/L',min:0,max:0.1},
+    {k:'no3',label:'Nitratos',u:'mg/L',min:0,max:20},
+    {k:'po4',label:'Fosfatos',u:'mg/L',min:0,max:0.1},
+    {k:'ca',label:'Calcio',u:'mg/L',min:380,max:450},
+    {k:'mg',label:'Magnesio',u:'mg/L',min:1250,max:1350}
+  ]
+};
+var state={v:2,aquariums:[],ultimoBackup:0};
+var filtro='todos';
+var tabActual='diario';
+function load(){
+  try{
+    var s=JSON.parse(localStorage.getItem('aquadiario'));
+    if(s&&s.aquariums){state=s;}
+  }catch(e){}
+  normalize();
+}
+function normalize(){
+  for(var i=0;i<state.aquariums.length;i++){
+    var a=state.aquariums[i];
+    if(!a.registros)a.registros=[];
+    if(!a.tareas)a.tareas=[];
+    if(!a.dosis)a.dosis=[];
+    if(!a.luz||!a.luz.puntos)a.luz={puntos:presetLuz('plantado')};
+    for(var j=0;j<a.registros.length;j++){if(!a.registros[j].fotos)a.registros[j].fotos=[];}
+  }
+  state.v=2;
+}
+function save(){
+  try{localStorage.setItem('aquadiario',JSON.stringify(state));return true;}
+  catch(e){alert('Sin espacio en el navegador. Haz una copia de seguridad (Ajustes) y borra fotos antiguas.');return false;}
+}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function num(v){var n=parseFloat(v);return isNaN(n)?null:n;}
+function getAq(id){for(var i=0;i<state.aquariums.length;i++){if(state.aquariums[i].id===id)return state.aquariums[i];}return null;}
+function regsOrd(a){return a.registros.slice().sort(function(x,y){return y.fecha.localeCompare(x.fecha);});}
+function hoy(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function fmtFecha(f){if(!f)return '';var p=f.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
+function diasDesde(f){return Math.max(0,Math.floor((Date.now()-new Date(f+'T12:00:00').getTime())/86400000));}
+function defsDe(a){return PARAMS[a.tipo]||PARAMS.dulce;}
+function fueraRango(def,v){var n=num(v);if(n==null)return false;return n<def.min||n>def.max;}
+function ultimoRegistro(a){var r=regsOrd(a);return r.length?r[0]:null;}
+function valorDe(r,k){return r&&r.params&&r.params[k]!=null?r.params[k]:null;}
+/* ===== Estado de salud y pendientes ===== */
+function diasUltimoCambio(a){
+  var regs=regsOrd(a);
+  for(var i=0;i<regs.length;i++){if(num(regs[i].cambioAgua)!=null&&num(regs[i].cambioAgua)>0)return diasDesde(regs[i].fecha);}
+  return null;
+}
+function estadoAcuario(a){
+  var uc=diasUltimoCambio(a);
+  if(uc!=null&&uc>=(a.cambioCada||7))return 'ambar';
+  var r=ultimoRegistro(a);
+  if(r&&r.params){
+    var defs=defsDe(a);
+    for(var i=0;i<defs.length;i++){var v=r.params[defs[i].k];if(v!=null&&v!==''&&fueraRango(defs[i],v))return 'rojo';}
+  }
+  return 'verde';
+}
+function pendientes(){
+  var p=[];
+  for(var i=0;i<state.aquariums.length;i++){
+    var a=state.aquariums[i];
+    var uc=diasUltimoCambio(a);
+    if(uc!=null&&uc>=(a.cambioCada||7))p.push({aq:a,tipo:'cambio',texto:'Cambio de agua (hace '+uc+' días; cada '+(a.cambioCada||7)+')'});
+    if(uc==null&&a.registros.length===0)p.push({aq:a,tipo:'cambio',texto:'Sin cambios de agua registrados'});
+    for(var j=0;j<a.tareas.length;j++){
+      var t=a.tareas[j];
+      if(!t.ultima||diasDesde(t.ultima)>=(t.cadaDias||7))p.push({aq:a,tipo:'tarea',tarea:t,texto:t.nombre+(t.ultima?' (hace '+diasDesde(t.ultima)+' días)':' (nunca hecha)')});
+    }
+    var dw=new Date().getDay();
+    for(var k=0;k<a.dosis.length;k++){
+      var d=a.dosis[k];
+      if(d.dias&&d.dias.indexOf(dw)>=0&&d.ultima!==hoy())p.push({aq:a,tipo:'dosis',dosis:d,texto:'Dosificar '+d.ml+' ml de '+d.producto});
+    }
+  }
+  return p;
+}
+/* ===== Router ===== */
+function go(h){location.hash=h;}
+function render(){
+  var app=document.getElementById('app');
+  var hash=location.hash;
+  var titulo='<h1><span class="aq">Aqua</span>Diario</h1>';
+  var sub=state.aquariums.length+' acuario'+(state.aquariums.length===1?'':'s');
+  var pend=pendientes().length;
+  app.innerHTML='<header><div class="row between"><div>'+titulo+'<div class="sub">'+sub+'</div></div></div></header><main id="main"></main>'
+    +'<nav class="bottom">'
+    +'<button class="'+((hash===''||hash.indexOf('#aq/')===0||hash.indexOf('#nuevo')===0)?'activo':'')+'" onclick="go(\'\')"><span class="ico">🐠</span>Acuarios</button>'
+    +'<button class="'+(hash==='#hoy'?'activo':'')+'" onclick="go(\'#hoy\')"><span class="ico">✅</span>Hoy'+(pend?'<span class="badge">'+pend+'</span>':'')+'</button>'
+    +'<button class="'+(hash==='#ajustes'?'activo':'')+'" onclick="go(\'#ajustes\')"><span class="ico">⚙️</span>Ajustes</button>'
+    +'</nav>';
+  var m=document.getElementById('main');
+  if(hash.indexOf('#aq/')===0){var partes=hash.slice(4).split('/');tabActual=partes[1]||tabActual||'diario';vistaAcuario(m,partes[0]);}
+  else if(hash==='#hoy'){vistaHoy(m);}
+  else if(hash==='#ajustes'){vistaAjustes(m);}
+  else if(hash.indexOf('#nuevo')===0){formAcuario(m,null);}
+  else if(hash.indexOf('#editar/')===0){formAcuario(m,hash.slice(8));}
+  else if(hash.indexOf('#reg/')===0){formRegistro(m,hash.slice(5),null);}
+  else if(hash.indexOf('#regedit/')===0){var pp=hash.slice(9).split('/');formRegistro(m,pp[0],pp[1]);}
+  else{vistaLista(m);}
+  window.scrollTo(0,0);
+}
+window.addEventListener('hashchange',function(){
+  var h=location.hash;
+  if(h.indexOf('#aq/')!==0){tabActual='diario';}
+  render();
+});
+/* ===== Inicio: lista de acuarios ===== */
+function setFiltro(f){filtro=f;render();}
+function vistaLista(m){
+  var html='<div class="filtros">'
+    +'<button class="'+(filtro==='todos'?'activo':'')+'" onclick="setFiltro(\'todos\')">Todos</button>'
+    +'<button class="'+(filtro==='dulce'?'activo':'')+'" onclick="setFiltro(\'dulce\')">💧 Dulce</button>'
+    +'<button class="'+(filtro==='marino'?'activo':'')+'" onclick="setFiltro(\'marino\')">🌊 Marino</button></div>';
+  var lista=state.aquariums.filter(function(a){return filtro==='todos'||a.tipo===filtro;});
+  if(!lista.length){
+    html+='<div class="vacio">No hay acuarios '+(filtro==='todos'?'todavía':'en esta sección')+'.<br>Pulsa el botón + para crear el primero.</div>';
+  }
+  for(var i=0;i<lista.length;i++){
+    var a=lista[i];var est=estadoAcuario(a);
+    var r=ultimoRegistro(a);
+    var temp=valorDe(r,'temp'),ph=valorDe(r,'ph');
+    var uc=diasUltimoCambio(a);
+    var foto=a.foto?'background-image:url('+a.foto+')':'';
+    html+='<div class="card tappable" onclick="tabActual=\'diario\';go(\'#aq/'+a.id+'\')">'
+      +'<div class="row">'
+      +(a.foto?'<div style="width:54px;height:54px;border-radius:14px;flex:none;'+foto+';background-size:cover;background-position:center"></div>':'<div style="width:54px;height:54px;border-radius:14px;flex:none;background:linear-gradient(135deg,#0e4a5e,#19b8d8);display:flex;align-items:center;justify-content:center;font-size:26px">'+(a.tipo==='marino'?'🌊':'🐠')+'</div>')
+      +'<div class="grow"><div class="row"><span class="dot '+est+'"></span><h2>'+esc(a.nombre)+'</h2></div>'
+      +'<div class="muted">'+(a.tipo==='marino'?'🌊 Marino':'💧 Dulce')+' · '+esc(a.litros||'?')+' L · '+a.registros.length+' registro'+(a.registros.length===1?'':'s')+'</div>'
+      +'<div class="muted" style="margin-top:3px">'
+      +(temp!=null?'🌡 '+esc(temp)+'°':'')+(ph!=null?'  ·  pH '+esc(ph):'')+(uc!=null?'  ·  💧 hace '+uc+' d':'  ·  💧 sin cambios')
+      +'</div></div>'
+      +'<div style="color:#2fd4f2;font-size:20px">›</div>'
+      +'</div></div>';
+  }
+  html+='<div class="fab"><button onclick="go(\'#nuevo\')" aria-label="Añadir acuario">+</button></div>';
+  m.innerHTML=html;
+}
+/* ===== Vista de acuario con pestañas ===== */
+function vistaAcuario(m,id){
+  var a=getAq(id);
+  if(!a){m.innerHTML='<div class="vacio">Acuario no encontrado.</div>';return;}
+  var est=estadoAcuario(a);
+  var html='<button class="back" onclick="go(\'\')">← Acuarios</button>';
+  html+='<div class="aqhead">'
+    +(a.foto?'<div class="bg" style="background-image:url('+a.foto+')"></div>':'')
+    +'<div class="grad"></div><div class="info">'
+    +'<div class="row"><span class="dot '+est+'"></span><h2 style="margin:0;font-size:20px">'+esc(a.nombre)+'</h2></div>'
+    +'<div class="muted" style="margin-top:3px">'+(a.tipo==='marino'?'🌊 Marino':'💧 Dulce')+' · '+esc(a.litros||'?')+' L'+(a.fecha?' · desde '+fmtFecha(a.fecha):'')+'</div>'
+    +'</div></div>';
+  var tabs=[['diario','📓 Diario'],['graficas','📈 Gráficas'],['luz','💡 Luz'],['tareas','🗓 Tareas']];
+  html+='<div class="tabs">';
+  for(var i=0;i<tabs.length;i++){
+    html+='<button class="'+(tabActual===tabs[i][0]?'activo':'')+'" onclick="tabActual=\''+tabs[i][0]+'\';go(\'#aq/'+a.id+'/'+tabs[i][0]+'\')">'+tabs[i][1]+'</button>';
+  }
+  html+='</div>';
+  if(tabActual==='graficas')html+=tabGraficas(a);
+  else if(tabActual==='luz')html+=tabLuz(a);
+  else if(tabActual==='tareas')html+=tabTareas(a);
+  else html+=tabDiario(a);
+  m.innerHTML=html;
+  if(tabActual==='graficas')dibujarGrafica(a);
+  if(tabActual==='luz')dibujarCurva(a);
+}
+function infoResumen(a){
+  var html='';
+  if(a.equipamiento)html+='<div style="margin-top:6px;font-size:14px">🔧 '+esc(a.equipamiento)+'</div>';
+  if(a.habitantes)html+='<div style="margin-top:6px;font-size:14px">🐟 '+esc(a.habitantes).replace(/\n/g,'<br>')+'</div>';
+  return html;
+}
+/* ===== Pestaña Diario ===== */
+function tabDiario(a){
+  var est=estadoAcuario(a);
+  var html='';
+  if(est==='rojo')html+='<div class="aviso rojo">⚠️ El último registro tiene parámetros fuera del rango seguro.</div>';
+  if(est==='ambar')html+='<div class="aviso">⏰ Le toca cambio de agua (cada '+(a.cambioCada||7)+' días).</div>';
+  html+='<div class="card">'+infoResumen(a)
+    +'<div class="row" style="margin-top:12px"><button class="btn sec mini grow" onclick="go(\'#editar/'+a.id+'\')">Editar datos</button><button class="btn sec mini grow" onclick="cambioRapido(\''+a.id+'\')">💧 Cambio de agua hoy</button></div></div>';
+  var regs=regsOrd(a);
+  html+='<div class="row between" style="margin:16px 0 8px"><h3 style="margin:0">Registros</h3><button class="btn mini" onclick="go(\'#reg/'+a.id+'\')">+ Registro</button></div>';
+  if(!regs.length)html+='<div class="vacio">Sin registros todavía.<br>Añade el primero con los parámetros del agua.</div>';
+  for(var i=0;i<regs.length;i++){
+    var r=regs[i];
+    html+='<div class="reg"><div class="fecha">'+fmtFecha(r.fecha)+'</div><div class="chips">';
+    var defs=defsDe(a);
+    for(var j=0;j<defs.length;j++){
+      var v=(r.params||{})[defs[j].k];
+      if(v!=null&&v!==''){
+        var alerta=fueraRango(defs[j],v);
+        html+='<span class="chip'+(alerta?' alert':'')+'">'+esc(defs[j].label)+': '+esc(v)+(defs[j].u?' '+defs[j].u:'')+'</span>';
+      }
+    }
+    if(num(r.cambioAgua)!=null&&num(r.cambioAgua)>0)html+='<span class="chip">💧 Cambio: '+esc(r.cambioAgua)+'%</span>';
+    html+='</div>'+(r.notas?'<div style="margin-top:6px;font-size:14px">📝 '+esc(r.notas).replace(/\n/g,'<br>')+'</div>':'');
+    if(r.fotos&&r.fotos.length){
+      html+='<div class="fotos">';
+      for(var f=0;f<r.fotos.length;f++)html+='<img src="'+r.fotos[f]+'" onclick="verFoto(\''+a.id+'\',\''+r.id+'\','+f+')" alt="foto">';
+      html+='</div>';
+    }
+    html+='<div class="ops"><button onclick="go(\'#regedit/'+a.id+'/'+r.id+'\')">Editar</button><button onclick="borrarRegistro(\''+a.id+'\',\''+r.id+'\')">Eliminar</button></div></div>';
+  }
+  return html;
+}
+function cambioRapido(aqId){
+  var pct=prompt('¿Qué % de agua has cambiado?','25');
+  if(pct==null)return;
+  pct=num(pct);
+  if(pct==null||pct<=0||pct>100){alert('Pon un % entre 1 y 100.');return;}
+  var a=getAq(aqId);if(!a)return;
+  a.registros.push({id:uid(),fecha:hoy(),params:{},cambioAgua:String(pct),notas:'',fotos:[]});
+  save();render();
+}
+/* ===== Formulario de registro ===== */
+var fotosTmp=[];
+function formRegistro(m,aqId,regId){
+  var a=getAq(aqId);
+  if(!a){m.innerHTML='<div class="vacio">Acuario no encontrado.</div>';return;}
+  var r=null;
+  if(regId){for(var i=0;i<a.registros.length;i++){if(a.registros[i].id===regId)r=a.registros[i];}}
+  fotosTmp=r&&r.fotos?r.fotos.slice():[];
+  var defs=defsDe(a);
+  var html='<button class="back" onclick="history.back()">← Volver</button><h2 style="margin-top:0">'+(regId?'Editar registro':'Nuevo registro')+' · '+esc(a.nombre)+'</h2>'
+    +'<label>Fecha</label><input id="r_fecha" type="date" value="'+esc(r?r.fecha:hoy())+'">';
+  for(var j=0;j<defs.length;j++){
+    var v=r&&r.params&&r.params[defs[j].k]!=null?r.params[defs[j].k]:'';
+    html+='<label>'+esc(defs[j].label)+(defs[j].u?' ('+defs[j].u+')':'')+' <span style="color:#4a7688">· seguro: '+defs[j].min+'–'+defs[j].max+'</span></label><input id="r_'+defs[j].k+'" type="number" inputmode="decimal" step="any" value="'+esc(v)+'">';
+  }
+  html+='<label>Cambio de agua (%)</label><input id="r_cambio" type="number" inputmode="numeric" min="0" max="100" value="'+esc(r&&r.cambioAgua!=null?r.cambioAgua:'')+'">'
+    +'<label>Notas</label><textarea id="r_notas" placeholder="Comportamiento, algas, tratamientos...">'+esc(r&&r.notas?r.notas:'')+'</textarea>'
+    +'<label>Fotos (máx. 3)</label><div id="fotosForm" class="fotos"></div>'
+    +'<button class="btn ghost mini" style="margin-top:6px" onclick="document.getElementById(\'fotoInput\').click()">📷 Añadir foto</button>'
+    +'<input type="file" id="fotoInput" accept="image/*" style="display:none" onchange="agregarFotoTmp(event)">'
+    +'<button class="btn block" onclick="guardarRegistro(\''+aqId+'\','+(regId?'\''+regId+'\'':'null')+')">Guardar</button>';
+  m.innerHTML=html;
+  pintarFotosTmp();
+}
+function pintarFotosTmp(){
+  var d=document.getElementById('fotosForm');
+  if(!d)return;
+  var html='';
+  for(var i=0;i<fotosTmp.length;i++)html+='<div style="position:relative"><img src="'+fotosTmp[i]+'" alt=""><button onclick="fotosTmp.splice('+i+',1);pintarFotosTmp()" style="position:absolute;top:-6px;right:-6px;background:#ff5252;color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer">✕</button></div>';
+  d.innerHTML=html;
+}
+function agregarFotoTmp(ev){
+  var f=ev.target.files[0];
+  ev.target.value='';
+  if(!f)return;
+  if(fotosTmp.length>=3){alert('Máximo 3 fotos por registro.');return;}
+  comprimirFoto(f,function(data){
+    fotosTmp.push(data);pintarFotosTmp();
+  });
+}
+function comprimirFoto(file,cb){
+  var rd=new FileReader();
+  rd.onload=function(){
+    var img=new Image();
+    img.onload=function(){
+      var max=1000,w=img.width,h=img.height;
+      if(w>max||h>max){var s=max/Math.max(w,h);w=Math.round(w*s);h=Math.round(h*s);}
+      var c=document.createElement('canvas');c.width=w;c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      cb(c.toDataURL('image/jpeg',0.72));
+    };
+    img.src=rd.result;
+  };
+  rd.readAsDataURL(file);
+}
+function verFoto(aqId,regId,idx){
+  var a=getAq(aqId);if(!a)return;
+  for(var i=0;i<a.registros.length;i++){
+    if(a.registros[i].id===regId&&a.registros[i].fotos[idx]){
+      document.getElementById('visorImg').src=a.registros[i].fotos[idx];
+      document.getElementById('visor').style.display='flex';
+      return;
+    }
+  }
+}
+function cerrarVisor(){document.getElementById('visor').style.display='none';}
+function guardarRegistro(aqId,regId){
+  var a=getAq(aqId);if(!a)return;
+  var fecha=document.getElementById('r_fecha').value;
+  if(!fecha){alert('Pon una fecha.');return;}
+  var defs=defsDe(a);
+  var params={};
+  for(var j=0;j<defs.length;j++){
+    var v=document.getElementById('r_'+defs[j].k).value;
+    if(v!==''&&v!=null)params[defs[j].k]=v;
+  }
+  var r=null;
+  if(regId){for(var i=0;i<a.registros.length;i++){if(a.registros[i].id===regId)r=a.registros[i];}}
+  if(!r){r={id:uid()};a.registros.push(r);}
+  r.fecha=fecha;r.params=params;
+  r.cambioAgua=document.getElementById('r_cambio').value;
+  r.notas=document.getElementById('r_notas').value;
+  r.fotos=fotosTmp.slice();
+  save();go('#aq/'+aqId);
+}
+function borrarRegistro(aqId,regId){
+  if(!confirm('¿Eliminar este registro?'))return;
+  var a=getAq(aqId);if(!a)return;
+  a.registros=a.registros.filter(function(x){return x.id!==regId;});
+  save();render();
+}
+/* ===== Pestaña Gráficas ===== */
+var paramGraf='ph';
+function tabGraficas(a){
+  var defs=defsDe(a);
+  if(!defs.some(function(d){return d.k===paramGraf;}))paramGraf=defs[0].k;
+  var html='<div class="chips" style="margin-bottom:4px">';
+  for(var i=0;i<defs.length;i++){
+    html+='<span class="chip" style="cursor:pointer;padding:7px 12px;'+(paramGraf===defs[i].k?'background:#19b8d8;color:#03222c;font-weight:700;border-color:#19b8d8':'')+'" onclick="paramGraf=\''+defs[i].k+'\';render()">'+esc(defs[i].label)+'</span>';
+  }
+  html+='</div><canvas id="graf" class="graf" height="220"></canvas>';
+  var regs=a.registros.slice().sort(function(x,y){return x.fecha.localeCompare(y.fecha);});
+  var n=0;for(var j=0;j<regs.length;j++)if(num((regs[j].params||{})[paramGraf])!=null)n++;
+  if(n<2)html+='<div class="vacio">Hacen falta al menos 2 registros con este parámetro para dibujar la gráfica.</div>';
+  var def=null;for(var k=0;k<defs.length;k++)if(defs[k].k===paramGraf)def=defs[k];
+  html+='<div class="muted" style="margin-top:8px;text-align:center">Rango seguro: '+def.min+' – '+def.max+(def.u?' '+def.u:'')+'</div>';
+  return html;
+}
+function dibujarGrafica(a){
+  var c=document.getElementById('graf');if(!c)return;
+  var dpr=window.devicePixelRatio||1;
+  var W=c.clientWidth,H=220;
+  c.width=W*dpr;c.height=H*dpr;
+  var x=c.getContext('2d');x.scale(dpr,dpr);
+  var defs=defsDe(a),def=null;
+  for(var i=0;i<defs.length;i++)if(defs[i].k===paramGraf)def=defs[i];
+  var regs=a.registros.slice().sort(function(p,q){return p.fecha.localeCompare(q.fecha);});
+  var pts=[];
+  for(var j=0;j<regs.length;j++){var v=num((regs[j].params||{})[paramGraf]);if(v!=null)pts.push({f:regs[j].fecha,v:v});}
+  if(pts.length<2)return;
+  var pad={l:38,r:10,t:12,b:24};
+  var lo=Math.min(def.min,Math.min.apply(null,pts.map(function(p){return p.v;})));
+  var hi=Math.max(def.max,Math.max.apply(null,pts.map(function(p){return p.v;})));
+  var margen=(hi-lo)*0.12||1;lo-=margen;hi+=margen;
+  function X(i){return pad.l+(W-pad.l-pad.r)*(pts.length===1?0.5:i/(pts.length-1));}
+  function Y(v){return pad.t+(H-pad.t-pad.b)*(1-(v-lo)/(hi-lo));}
+  // banda de rango seguro
+  x.fillStyle='rgba(61,220,132,.10)';
+  x.fillRect(pad.l,Y(def.max),W-pad.l-pad.r,Y(def.min)-Y(def.max));
+  x.strokeStyle='rgba(61,220,132,.4)';x.setLineDash([4,4]);x.lineWidth=1;
+  x.beginPath();x.moveTo(pad.l,Y(def.max));x.lineTo(W-pad.r,Y(def.max));x.stroke();
+  x.beginPath();x.moveTo(pad.l,Y(def.min));x.lineTo(W-pad.r,Y(def.min));x.stroke();
+  x.setLineDash([]);
+  // rejilla y etiquetas
+  x.fillStyle='#4a7688';x.font='10px system-ui';
+  for(var g=0;g<=4;g++){var gv=lo+(hi-lo)*g/4;x.fillText((Math.round(gv*100)/100).toString(),4,Y(gv)+3);x.strokeStyle='rgba(22,57,75,.6)';x.beginPath();x.moveTo(pad.l,Y(gv));x.lineTo(W-pad.r,Y(gv));x.stroke();}
+  var paso=Math.max(1,Math.ceil(pts.length/5));
+  for(var d=0;d<pts.length;d+=paso){var fp=pts[d].f.split('-');x.fillText(fp[2]+'/'+fp[1],X(d)-10,H-8);}
+  // línea
+  x.strokeStyle='#2fd4f2';x.lineWidth=2;x.beginPath();
+  for(var p=0;p<pts.length;p++){if(p===0)x.moveTo(X(p),Y(pts[p].v));else x.lineTo(X(p),Y(pts[p].v));}
+  x.stroke();
+  // relleno suave
+  var grad=x.createLinearGradient(0,pad.t,0,H-pad.b);
+  grad.addColorStop(0,'rgba(47,212,242,.25)');grad.addColorStop(1,'rgba(47,212,242,0)');
+  x.lineTo(X(pts.length-1),H-pad.b);x.lineTo(X(0),H-pad.b);x.closePath();x.fillStyle=grad;x.fill();
+  // puntos
+  for(var q=0;q<pts.length;q++){
+    var mal=pts[q].v<def.min||pts[q].v>def.max;
+    x.fillStyle=mal?'#ff5252':'#2fd4f2';
+    x.beginPath();x.arc(X(q),Y(pts[q].v),mal?4:3,0,7);x.fill();
+  }
+}
+/* ===== Pestaña Luz ===== */
+function presetLuz(nombre){
+  function P(h,m,w,r,g,b){return {min:h*60+m,w:w,r:r,g:g,b:b};}
+  if(nombre==='gamba')return [P(0,0,0,0,0,0),P(9,0,0,0,0,0),P(10,30,45,35,40,60),P(17,0,45,35,40,60),P(18,30,0,0,0,0)];
+  if(nombre==='peces')return [P(0,0,0,0,0,0),P(10,0,0,0,0,0),P(11,0,60,55,55,60),P(18,0,60,55,55,60),P(19,0,0,0,0,0)];
+  if(nombre==='marino')return [P(0,0,0,0,0,0),P(9,0,0,0,0,0),P(10,30,65,20,25,100),P(19,0,65,20,25,100),P(20,30,0,0,0,0)];
+  return [P(0,0,0,0,0,0),P(8,0,0,0,0,0),P(9,30,90,70,80,85),P(18,0,90,70,80,85),P(19,30,0,0,0,0)];
+}
+var puntoSel=0;
+function fmtHora(min){return String(Math.floor(min/60)).padStart(2,'0')+':'+String(min%60).padStart(2,'0');}
+function puntosOrd(a){return a.luz.puntos.slice().sort(function(x,y){return x.min-y.min;});}
+function canalEn(pts,min,c){
+  // interpolación lineal entre puntos concretos (sin envolver medianoche)
+  if(min<=pts[0].min)return pts[0][c];
+  for(var i=1;i<pts.length;i++){
+    if(min<=pts[i].min){
+      var a0=pts[i-1],a1=pts[i];
+      var t=(min-a0.min)/Math.max(1,a1.min-a0.min);
+      return a0[c]+(a1[c]-a0[c])*t;
+    }
+  }
+  return pts[pts.length-1][c];
+}
+function tabLuz(a){
+  var pts=puntosOrd(a);
+  if(puntoSel>=pts.length)puntoSel=pts.length-1;
+  if(puntoSel<0)puntoSel=0;
+  var p=pts[puntoSel];
+  var fotoMin=0;
+  for(var m=0;m<1440;m+=10){if(Math.max(canalEn(pts,m,'w'),canalEn(pts,m,'r'),canalEn(pts,m,'g'),canalEn(pts,m,'b'))>0)fotoMin+=10;}
+  var html='<div class="card"><div class="row between"><h3 style="margin:0">Programa de luz</h3><span class="chip">☀️ '+Math.floor(fotoMin/60)+'h '+(fotoMin%60? (fotoMin%60)+'m':'')+'</span></div>'
+    +'<div class="muted" style="margin-top:4px">Anota aquí el horario que tienes en tu pantalla de luz, con sus rampas de amanecer y anochecer.</div>'
+    +'<canvas id="curva" class="graf" height="170"></canvas>'
+    +'<div class="presets">'
+    +'<div class="preset" onclick="aplicarPreset(\''+a.id+'\',\'plantado\')"><span class="ico">🌿</span>Plantado</div>'
+    +'<div class="preset" onclick="aplicarPreset(\''+a.id+'\',\'gamba\')"><span class="ico">🦐</span>Gamba</div>'
+    +'<div class="preset" onclick="aplicarPreset(\''+a.id+'\',\'peces\')"><span class="ico">🐟</span>Peces</div>'
+    +'<div class="preset" onclick="aplicarPreset(\''+a.id+'\',\'marino\')"><span class="ico">🌊</span>Marino</div>'
+    +'</div></div>';
+  html+='<div class="card"><div class="row between"><h3 style="margin:0">Puntos del horario</h3><button class="btn mini" onclick="nuevoPunto(\''+a.id+'\')">+ Punto</button></div>'
+    +'<div class="ptos">';
+  for(var i=0;i<pts.length;i++){
+    html+='<button class="'+(i===puntoSel?'activo':'')+'" onclick="puntoSel='+i+';render()">'+fmtHora(pts[i].min)+'</button>';
+  }
+  html+='</div>';
+  if(p){
+    var horaStr=fmtHora(p.min);
+    html+='<label>Hora del punto</label><input type="time" value="'+horaStr+'" onchange="moverPunto(\''+a.id+'\',this.value)">'
+      +'<div class="canal"><div class="lab"><span>⚪ Blanco</span><span id="lv_w">'+p.w+'%</span></div><input type="range" min="0" max="100" value="'+p.w+'" oninput="setCanal(\''+a.id+'\',\'w\',this.value)"></div>'
+      +'<div class="canal"><div class="lab"><span>🔴 Rojo</span><span id="lv_r">'+p.r+'%</span></div><input class="r" type="range" min="0" max="100" value="'+p.r+'" oninput="setCanal(\''+a.id+'\',\'r\',this.value)"></div>'
+      +'<div class="canal"><div class="lab"><span>🟢 Verde</span><span id="lv_g">'+p.g+'%</span></div><input class="g" type="range" min="0" max="100" value="'+p.g+'" oninput="setCanal(\''+a.id+'\',\'g\',this.value)"></div>'
+      +'<div class="canal"><div class="lab"><span>🔵 Azul</span><span id="lv_b">'+p.b+'%</span></div><input class="b" type="range" min="0" max="100" value="'+p.b+'" oninput="setCanal(\''+a.id+'\',\'b\',this.value)"></div>'
+      +(pts.length>2?'<button class="btn peligro mini" style="margin-top:8px" onclick="borrarPunto(\''+a.id+'\')">Eliminar este punto</button>':'<div class="muted" style="margin-top:8px">Mínimo 2 puntos.</div>');
+  }
+  html+='</div>';
+  return html;
+}
+function aplicarPreset(aqId,nombre){
+  var a=getAq(aqId);if(!a)return;
+  a.luz={puntos:presetLuz(nombre)};
+  puntoSel=0;save();render();
+}
+function nuevoPunto(aqId){
+  var a=getAq(aqId);if(!a)return;
+  var pts=puntosOrd(a);
+  var ultimo=pts[pts.length-1];
+  a.luz.puntos.push({min:Math.min(1439,ultimo.min+30),w:ultimo.w,r:ultimo.r,g:ultimo.g,b:ultimo.b});
+  puntoSel=pts.length;save();render();
+}
+function borrarPunto(aqId){
+  var a=getAq(aqId);if(!a)return;
+  var pts=puntosOrd(a);
+  if(pts.length<=2)return;
+  var borrar=pts[puntoSel];
+  a.luz.puntos=a.luz.puntos.filter(function(x){return x!==borrar;});
+  puntoSel=0;save();render();
+}
+function moverPunto(aqId,horaStr){
+  var a=getAq(aqId);if(!a)return;
+  var pts=puntosOrd(a);
+  var p=pts[puntoSel];if(!p)return;
+  var hm=horaStr.split(':');
+  p.min=parseInt(hm[0],10)*60+parseInt(hm[1],10);
+  save();render();
+}
+function setCanal(aqId,c,valor){
+  var a=getAq(aqId);if(!a)return;
+  var pts=puntosOrd(a);
+  var p=pts[puntoSel];if(!p)return;
+  p[c]=parseInt(valor,10);
+  var lab=document.getElementById('lv_'+c);if(lab)lab.textContent=p[c]+'%';
+  save();dibujarCurva(a);
+}
+function dibujarCurva(a){
+  var c=document.getElementById('curva');if(!c)return;
+  var dpr=window.devicePixelRatio||1;
+  var W=c.clientWidth,H=170;
+  c.width=W*dpr;c.height=H*dpr;
+  var x=c.getContext('2d');x.scale(dpr,dpr);
+  var pts=puntosOrd(a);
+  if(pts.length<2)return;
+  var pad={l:30,r:8,t:10,b:20};
+  function X(min){return pad.l+(W-pad.l-pad.r)*min/1440;}
+  function Y(v){return pad.t+(H-pad.t-pad.b)*(1-v/100);}
+  x.fillStyle='#4a7688';x.font='10px system-ui';
+  for(var h=0;h<=24;h+=6){x.fillText(String(h).padStart(2,'0')+':00',X(h*60)-12,H-6);}
+  x.fillText('100%',4,Y(100)+3);x.fillText('0',10,Y(0)+3);
+  x.strokeStyle='rgba(22,57,75,.6)';
+  x.beginPath();x.moveTo(pad.l,Y(100));x.lineTo(W-pad.r,Y(100));x.stroke();
+  x.beginPath();x.moveTo(pad.l,Y(0));x.lineTo(W-pad.r,Y(0));x.stroke();
+  // relleno de intensidad total (blanco)
+  var grad=x.createLinearGradient(0,pad.t,0,H-pad.b);
+  grad.addColorStop(0,'rgba(47,212,242,.30)');grad.addColorStop(1,'rgba(47,212,242,0)');
+  x.beginPath();x.moveTo(X(0),Y(0));
+  for(var m=0;m<=1440;m+=10)x.lineTo(X(m),Y(canalEn(pts,m,'w')));
+  x.lineTo(X(1440),Y(0));x.closePath();x.fillStyle=grad;x.fill();
+  var canales=[['w','#e8f4f8',2.5],['r','#ff6e6e',1.3],['g','#69f0ae',1.3],['b','#6ea8ff',1.3]];
+  for(var k=0;k<canales.length;k++){
+    x.strokeStyle=canales[k][1];x.lineWidth=canales[k][2];x.beginPath();
+    for(var m2=0;m2<=1440;m2+=10){var yy=Y(canalEn(pts,m2,canales[k][0]));if(m2===0)x.moveTo(X(0),yy);else x.lineTo(X(m2),yy);}
+    x.stroke();
+  }
+  // marcadores de puntos
+  for(var i=0;i<pts.length;i++){
+    x.fillStyle=i===puntoSel?'#2fd4f2':'#7fb6c9';
+    x.beginPath();x.arc(X(pts[i].min),Y(pts[i].w),i===puntoSel?5:3.5,0,7);x.fill();
+  }
+}
+/* ===== Pestaña Tareas y dosificación ===== */
+var DIAS=['D','L','M','X','J','V','S'];
+function tabTareas(a){
+  var html='<div class="card"><div class="row between"><h3 style="margin:0">Tareas periódicas</h3><button class="btn mini" onclick="nuevaTarea(\''+a.id+'\')">+ Tarea</button></div>';
+  var uc=diasUltimoCambio(a);
+  html+='<div class="tarea" style="margin-top:10px"><span class="estado '+(uc!=null&&uc>=(a.cambioCada||7)?'rojo':'verde')+'"></span><div class="grow"><div style="font-size:14px;font-weight:700">💧 Cambio de agua</div><div class="muted">Cada '+(a.cambioCada||7)+' días · '+(uc!=null?'último hace '+uc+' días':'sin registrar')+'</div></div><button class="btn sec mini" onclick="cambioRapido(\''+a.id+'\')">Hecho</button></div>';
+  for(var i=0;i<a.tareas.length;i++){
+    var t=a.tareas[i];
+    var pend=!t.ultima||diasDesde(t.ultima)>=(t.cadaDias||7);
+    html+='<div class="tarea"><span class="estado '+(pend?'rojo':'verde')+'"></span><div class="grow"><div style="font-size:14px;font-weight:700">'+esc(t.nombre)+'</div><div class="muted">Cada '+t.cadaDias+' días · '+(t.ultima?'última '+fmtFecha(t.ultima):'nunca hecha')+'</div></div>'
+      +'<button class="btn sec mini" onclick="tareaHecha(\''+a.id+'\',\''+t.id+'\')">Hecha</button>'
+      +'<button class="btn ghost mini" onclick="borrarTarea(\''+a.id+'\',\''+t.id+'\')">✕</button></div>';
+  }
+  html+='</div>';
+  html+='<div class="card"><div class="row between"><h3 style="margin:0">Dosificación</h3><button class="btn mini" onclick="nuevaDosis(\''+a.id+'\')">+ Producto</button></div>';
+  if(!a.dosis.length)html+='<div class="muted" style="margin-top:8px">Añade fertilizantes o aditivos con su dosis y los días que tocan.</div>';
+  for(var j=0;j<a.dosis.length;j++){
+    var d=a.dosis[j];
+    var diasTxt=(d.dias&&d.dias.length?d.dias.map(function(x){return DIAS[x];}).join(' '):'—');
+    html+='<div class="tarea"><span class="estado '+(d.dias&&d.dias.indexOf(new Date().getDay())>=0&&d.ultima!==hoy()?'ambar':'verde')+'"></span><div class="grow"><div style="font-size:14px;font-weight:700">'+esc(d.producto)+' · '+esc(d.ml)+' ml</div><div class="muted">Días: '+diasTxt+(d.ultima?' · última '+fmtFecha(d.ultima):'')+'</div></div>'
+      +'<button class="btn sec mini" onclick="dosisHecha(\''+a.id+'\',\''+d.id+'\')">Hecha</button>'
+      +'<button class="btn ghost mini" onclick="borrarDosis(\''+a.id+'\',\''+d.id+'\')">✕</button></div>';
+  }
+  html+='</div>';
+  return html;
+}
+function nuevaTarea(aqId){
+  var a=getAq(aqId);if(!a)return;
+  var nombre=prompt('Nombre de la tarea (ej. Limpiar filtro):','');
+  if(!nombre)return;
+  var dias=num(prompt('¿Cada cuántos días?','7'));
+  if(!dias||dias<1)dias=7;
+  a.tareas.push({id:uid(),nombre:nombre.trim(),cadaDias:dias,ultima:null});
+  save();render();
+}
+function tareaHecha(aqId,tid){
+  var a=getAq(aqId);if(!a)return;
+  for(var i=0;i<a.tareas.length;i++)if(a.tareas[i].id===tid)a.tareas[i].ultima=hoy();
+  save();render();
+}
+function borrarTarea(aqId,tid){
+  if(!confirm('¿Eliminar esta tarea?'))return;
+  var a=getAq(aqId);if(!a)return;
+  a.tareas=a.tareas.filter(function(t){return t.id!==tid;});
+  save();render();
+}
+function nuevaDosis(aqId){
+  var a=getAq(aqId);if(!a)return;
+  var producto=prompt('Producto (ej. Abono NPK, Calcio...):','');
+  if(!producto)return;
+  var ml=num(prompt('¿Cuántos ml por dosis?','5'));
+  if(!ml||ml<=0)ml=5;
+  var diasTxt=prompt('¿Qué días? Números separados por comas: 0=Dom 1=Lun 2=Mar 3=Mié 4=Jue 5=Vie 6=Sáb','1,4');
+  var dias=[];
+  if(diasTxt){diasTxt.split(',').forEach(function(t){var n=parseInt(t,10);if(n>=0&&n<=6)dias.push(n);});}
+  if(!dias.length)dias=[1,4];
+  a.dosis.push({id:uid(),producto:producto.trim(),ml:String(ml),dias:dias,ultima:null});
+  save();render();
+}
+function dosisHecha(aqId,did){
+  var a=getAq(aqId);if(!a)return;
+  for(var i=0;i<a.dosis.length;i++)if(a.dosis[i].id===did)a.dosis[i].ultima=hoy();
+  save();render();
+}
+function borrarDosis(aqId,did){
+  if(!confirm('¿Eliminar esta dosificación?'))return;
+  var a=getAq(aqId);if(!a)return;
+  a.dosis=a.dosis.filter(function(d){return d.id!==did;});
+  save();render();
+}
+/* ===== Vista Hoy ===== */
+function vistaHoy(m){
+  var p=pendientes();
+  var html='<h2 style="margin-top:0">Pendiente hoy</h2>';
+  if(!p.length)html+='<div class="vacio">🎉 Todo al día.<br>No hay cambios de agua, tareas ni dosis pendientes.</div>';
+  for(var i=0;i<p.length;i++){
+    var it=p[i];
+    var icono=it.tipo==='cambio'?'💧':(it.tipo==='dosis'?'🧪':'🗓');
+    var accion='';
+    if(it.tipo==='cambio')accion='<button class="btn sec mini" onclick="cambioRapido(\''+it.aq.id+'\')">Hecho</button>';
+    else if(it.tipo==='tarea')accion='<button class="btn sec mini" onclick="tareaHecha(\''+it.aq.id+'\',\''+it.tarea.id+'\')">Hecha</button>';
+    else accion='<button class="btn sec mini" onclick="dosisHecha(\''+it.aq.id+'\',\''+it.dosis.id+'\')">Hecha</button>';
+    html+='<div class="tarea"><span class="estado '+(it.tipo==='cambio'?'rojo':'ambar')+'"></span><div class="grow"><div style="font-size:14px;font-weight:700">'+icono+' '+esc(it.aq.nombre)+'</div><div class="muted">'+esc(it.texto)+'</div></div>'+accion+'</div>';
+  }
+  html+='<div class="muted" style="text-align:center;margin-top:16px">Los avisos se calculan al abrir la app.<br>Entra cada día para ver lo que toca.</div>';
+  m.innerHTML=html;
+}
+/* ===== Formulario de acuario ===== */
+var fotoAqTmp=null;
+function formAcuario(m,id){
+  var a=id?getAq(id):null;
+  if(id&&!a){m.innerHTML='<div class="vacio">Acuario no encontrado.</div>';return;}
+  var v=a||{nombre:'',tipo:'dulce',litros:'',fecha:'',cambioCada:7,equipamiento:'',habitantes:'',foto:null};
+  fotoAqTmp=v.foto||null;
+  var html='<button class="back" onclick="history.back()">← Volver</button><h2 style="margin-top:0">'+(id?'Editar acuario':'Nuevo acuario')+'</h2>'
+    +'<div class="row" style="margin-bottom:4px"><div id="fotoAqPrev" style="width:64px;height:64px;border-radius:16px;background:'+(fotoAqTmp?'url('+fotoAqTmp+') center/cover':'linear-gradient(135deg,#0e4a5e,#19b8d8)')+';flex:none"></div><button class="btn ghost mini" onclick="document.getElementById(\'fotoAqInput\').click()">📷 Foto del acuario</button></div>'
+    +'<input type="file" id="fotoAqInput" accept="image/*" style="display:none" onchange="fotoAcuarioSel(event)">'
+    +'<label>Nombre</label><input id="f_nombre" value="'+esc(v.nombre)+'" placeholder="Ej. Acuario del salón">'
+    +'<label>Tipo</label><select id="f_tipo"><option value="dulce"'+(v.tipo==='dulce'?' selected':'')+'>💧 Agua dulce</option><option value="marino"'+(v.tipo==='marino'?' selected':'')+'>🌊 Marino</option></select>'
+    +'<label>Litros</label><input id="f_litros" type="number" inputmode="numeric" min="0" value="'+esc(v.litros)+'">'
+    +'<label>Fecha de montaje</label><input id="f_fecha" type="date" value="'+esc(v.fecha||'')+'">'
+    +'<label>Cambio de agua cada... (días)</label><input id="f_cambio" type="number" inputmode="numeric" min="1" value="'+esc(v.cambioCada||7)+'">'
+    +'<label>Equipamiento (filtro, luz, calentador, CO2...)</label><input id="f_equip" value="'+esc(v.equipamiento||'')+'">'
+    +'<label>Habitantes (peces, plantas, invertebrados)</label><textarea id="f_hab" placeholder="Ej. 10 neones, 6 guppies, 2 anubias">'+esc(v.habitantes||'')+'</textarea>'
+    +'<button class="btn block" onclick="guardarAcuario('+(id?'\''+id+'\'':'null')+')">Guardar</button>';
+  if(id)html+='<button class="btn peligro block" onclick="borrarAcuario(\''+id+'\')">Eliminar acuario</button>';
+  m.innerHTML=html;
+}
+function fotoAcuarioSel(ev){
+  var f=ev.target.files[0];ev.target.value='';
+  if(!f)return;
+  comprimirFoto(f,function(data){
+    fotoAqTmp=data;
+    var d=document.getElementById('fotoAqPrev');
+    if(d)d.style.background='url('+data+') center/cover';
+  });
+}
+function guardarAcuario(id){
+  var nombre=document.getElementById('f_nombre').value.trim();
+  if(!nombre){alert('Ponle un nombre al acuario.');return;}
+  var a=id?getAq(id):null;
+  if(!a){a={id:uid(),registros:[],tareas:[],dosis:[],luz:{puntos:presetLuz('plantado')}};state.aquariums.push(a);}
+  a.nombre=nombre;
+  a.tipo=document.getElementById('f_tipo').value;
+  a.litros=document.getElementById('f_litros').value;
+  a.fecha=document.getElementById('f_fecha').value;
+  a.cambioCada=parseInt(document.getElementById('f_cambio').value,10)||7;
+  a.equipamiento=document.getElementById('f_equip').value;
+  a.habitantes=document.getElementById('f_hab').value;
+  a.foto=fotoAqTmp;
+  save();go('#aq/'+a.id+'/diario');
+}
+function borrarAcuario(id){
+  if(!confirm('¿Eliminar este acuario y todos sus registros?'))return;
+  state.aquariums=state.aquariums.filter(function(x){return x.id!==id;});
+  save();go('');
+}
+/* ===== Ajustes y copia de seguridad ===== */
+function vistaAjustes(m){
+  var nReg=0,nFotos=0;
+  for(var i=0;i<state.aquariums.length;i++){
+    var a=state.aquariums[i];nReg+=a.registros.length;
+    for(var j=0;j<a.registros.length;j++)nFotos+=(a.registros[j].fotos||[]).length;
+  }
+  var bytes=0;try{bytes=(localStorage.getItem('aquadiario')||'').length;}catch(e){}
+  var html='<h2 style="margin-top:0">Ajustes</h2>'
+    +'<div class="statgrid">'
+    +'<div class="stat"><div class="v">'+state.aquariums.length+'</div><div class="l">acuarios</div></div>'
+    +'<div class="stat"><div class="v">'+nReg+'</div><div class="l">registros</div></div>'
+    +'<div class="stat"><div class="v">'+nFotos+'</div><div class="l">fotos</div></div>'
+    +'</div>'
+    +'<div class="card"><h3 style="margin-top:0">Copia de seguridad</h3>'
+    +'<div class="muted">Tus datos se guardan solo en este navegador ('+Math.round(bytes/1024)+' KB usados). Descarga una copia de vez en cuando por si borras los datos del sitio o cambias de móvil.</div>'
+    +(state.ultimoBackup?'<div class="muted" style="margin-top:6px">Última copia: '+fmtFecha(state.ultimoBackup)+'</div>':'<div class="aviso" style="margin-top:8px">Aún no has hecho ninguna copia.</div>')
+    +'<div class="row" style="margin-top:10px"><button class="btn grow" onclick="exportar()">⬇️ Descargar copia</button><button class="btn sec grow" onclick="document.getElementById(\'imp\').click()">⬆️ Restaurar</button></div></div>'
+    +'<div class="card"><h3 style="margin-top:0">Añadir a pantalla de inicio</h3><div class="muted">En Chrome: menú ⋮ → «Añadir a pantalla de inicio». Así la abres como una app, con su icono.</div></div>'
+    +'<div class="muted" style="text-align:center;margin-top:18px">AquaDiario v2 · hecho con 🐠</div>';
+  m.innerHTML=html;
+}
+function exportar(){
+  var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  var url=URL.createObjectURL(blob);
+  var link=document.createElement('a');
+  link.href=url;link.download='AquaDiario-copia.json';
+  document.body.appendChild(link);link.click();document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+  state.ultimoBackup=hoy();save();
+}
+document.getElementById('imp').addEventListener('change',function(ev){
+  var f=ev.target.files[0];ev.target.value='';
+  if(!f)return;
+  var rd=new FileReader();
+  rd.onload=function(){
+    try{
+      var s=JSON.parse(rd.result);
+      if(!s||!s.aquariums){alert('Ese archivo no es una copia de AquaDiario.');return;}
+      if(!confirm('Esto sustituirá todos los datos actuales. ¿Seguir?'))return;
+      var old=state;state=s;normalize();if(!save()){state=old;render();alert('No se pudo restaurar la copia: tus datos actuales no se han tocado.');return;}go('');render();alert('Copia restaurada.');
+    }catch(e){alert('No se pudo leer el archivo.');}
+  };
+  rd.readAsText(f);
+});
+load();
+render();
+</script>
+</body>
+</html>
